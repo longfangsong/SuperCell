@@ -18,6 +18,7 @@ class Ground:
             self.__cells.append([])
             for j in range(0, Ground.MAX_COL):
                 self.__cells[i].append(None)
+        print(self.__cells)
 
     def add_cell(self, x, y, new_cell=cell.Cell()):
         assert 0 <= x < Ground.MAX_ROW and 0 <= y < Ground.MAX_COL
@@ -81,7 +82,7 @@ class Ground:
                     to_breed.append((xx, yy))
         return random.sample(to_breed, 1)[0] if to_breed else None
 
-    def __find_random_nearby_empty_grid(self, x, y, passed):
+    def __find_random_nearby_empty_grid(self, x, y, passed=None):
         grid = []
         for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
             for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
@@ -90,7 +91,7 @@ class Ground:
         return random.sample(grid, 1)[0] if grid else None
 
     def __try_breed(self, x, y):
-        if not self.__find_random_nearby_cell_to_breed(x, y) or not self.__find_random_nearby_empty_grid():
+        if not self.__find_random_nearby_cell_to_breed(x, y) or not self.__find_random_nearby_empty_grid(x, y):
             return
         bx, by = self.__find_random_nearby_cell_to_breed(x, y)
         tx, ty = self.__find_random_nearby_empty_grid(x, y)
@@ -98,7 +99,7 @@ class Ground:
         self.__cells[tx][ty] = cell.Cell(self.__cells[x][y], self.__cells[bx][by])
 
     def __move(self, x, y):
-        passed = {}
+        passed = set()
         d = self.__cells[x][y].movable_distance()
         for step in range(0, d):
             if self.__find_random_nearby_empty_grid(x, y, passed):
@@ -109,7 +110,6 @@ class Ground:
                 self.__cells[x][y].minus_energy(1)
 
     def round(self):
-        # todo tkinter 没有定时器事件，需要用线程模拟！(T_T)（这是controller的工作）
         for x, row in enumerate(self.__cells):
             for y, the_cell in enumerate(row):
                 the_cell.round()
@@ -120,6 +120,8 @@ class Ground:
                 self.__try_breed(x, y)
 
     def get_cell_info_at(self, x, y):
+        if self.__cells[x][y] is None:
+            return None
         return (not self.__cells[x][y].bad), self.__cells[x][y].hp_percent
 
 
@@ -130,10 +132,15 @@ class GroundViewDelegate:
     def get_cell_info_at(self, x, y):
         pass
 
-    def model_coord(self, x, y):
+    @staticmethod
+    def model_coord(x, y):
         pass
 
-    def view_coord(self, x, y):
+    @staticmethod
+    def view_coord(x, y):
+        pass
+
+    def on_click(self, event):
         pass
 
 
@@ -144,14 +151,18 @@ class GroundView:
         self.delegate = delegate
         assert isinstance(self.delegate, GroundViewDelegate)
         size = self.delegate.get_size()
-        self.canvas = tkinter.Canvas(self, master_, width=(GroundView.CELL_RADIUS * 1.2 * 2 + 1) * 15 + 11,
-                                     height=(GroundView.CELL_RADIUS * 1.2 * 2 + 1) * 15 + 11, bg='white')
+        self.__canvas = tkinter.Canvas(master_, width=(GroundView.CELL_RADIUS * 1.2 * 2 + 1) * 15 + 11,
+                                       height=(GroundView.CELL_RADIUS * 1.2 * 2 + 1) * 15 + 11, bg='white')
+        self.__canvas.bind('<Button-1>', delegate.on_click)
         for x in range(size[0] + 1):
-            self.canvas.create_line(5, x * GroundView.CELL_RADIUS * 1.2 * 2 + 5,
-                                    15 * GroundView.CELL_RADIUS * 1.2 * 2 + 5, x * GroundView.CELL_RADIUS * 1.2 * 2 + 5)
+            self.__canvas.create_line(5, x * GroundView.CELL_RADIUS * 1.2 * 2 + 5,
+                                      15 * GroundView.CELL_RADIUS * 1.2 * 2 + 5,
+                                      x * GroundView.CELL_RADIUS * 1.2 * 2 + 5)
         for y in range(size[1] + 1):
-            self.canvas.create_line(y * GroundView.CELL_RADIUS * 1.2 * 2 + 5, 5,
-                                    y * GroundView.CELL_RADIUS * 1.2 * 2 + 5, 15 * GroundView.CELL_RADIUS * 1.2 * 2 + 5)
+            self.__canvas.create_line(y * GroundView.CELL_RADIUS * 1.2 * 2 + 5, 5,
+                                      y * GroundView.CELL_RADIUS * 1.2 * 2 + 5,
+                                      15 * GroundView.CELL_RADIUS * 1.2 * 2 + 5)
+        self.__canvas.grid(row=1, column=1)
 
     def draw_cell(self, x, y, is_good, percent):
         arc_coord = x - GroundView.CELL_RADIUS, y - GroundView.CELL_RADIUS, x + GroundView.CELL_RADIUS, y + GroundView.CELL_RADIUS
@@ -159,7 +170,7 @@ class GroundView:
         delta_x = sqrt(GroundView.CELL_RADIUS * GroundView.CELL_RADIUS - delta_h * delta_h)
         if percent >= 0.1:
             if percent >= 0.99:
-                self.canvas.create_oval(arc_coord, fill='green', outline='black' if is_good else 'red')
+                self.__canvas.create_oval(arc_coord, fill='green', outline='black' if is_good else 'red')
             else:
                 r = (int(510 - 510 * percent) if percent >= 0.5 else 255) * 16 * 16 * 16 * 16
                 g = int(255 if percent >= 0.5 else percent * 2 * 255) * 16 * 16
@@ -167,57 +178,69 @@ class GroundView:
                 tri_coord = x - delta_x, y - delta_h, \
                             x + delta_x, y - delta_h, \
                             x, y
-                self.canvas.create_arc(arc_coord, start=degrees(asin(2 * percent - 1)),
-                                       extent=-180 - 2 * degrees(asin(2 * percent - 1)), fill=c,
-                                       outline=c)
-                self.canvas.create_polygon(tri_coord, fill=c if percent >= 0.5 else 'white',
-                                           outline=c if percent >= 0.5 else 'white', width=1 if percent > 0.5 else 2)
+                self.__canvas.create_arc(arc_coord, start=degrees(asin(2 * percent - 1)),
+                                         extent=-180 - 2 * degrees(asin(2 * percent - 1)), fill=c,
+                                         outline=c)
+                self.__canvas.create_polygon(tri_coord, fill=c if percent >= 0.5 else 'white',
+                                             outline=c if percent >= 0.5 else 'white', width=1 if percent > 0.5 else 2)
         elif percent <= -0.1:
             if percent <= - 0.99:
-                self.canvas.create_oval(arc_coord, fill='grey', outline='black' if is_good else 'red')
+                self.__canvas.create_oval(arc_coord, fill='grey', outline='black' if is_good else 'red')
             else:
                 tri_coord = x - delta_x, y + delta_h, \
                             x + delta_x, y + delta_h, \
                             x, y
-            self.canvas.create_arc(arc_coord, start=-degrees(asin(2 * -percent - 1)),
-                                   extent=180 + 2 * degrees(asin(2 * -percent - 1)), fill='grey', outline='grey')
-            self.canvas.create_polygon(tri_coord, fill='grey' if -percent >= 0.5 else 'white',
-                                       outline='grey' if -percent >= 0.5 else 'white',
-                                       width=1 if abs(percent) > 0.5 else 3)
-        self.canvas.create_oval(arc_coord, outline='black' if is_good else 'red')
+                self.__canvas.create_arc(arc_coord, start=-degrees(asin(2 * -percent - 1)),
+                                         extent=180 + 2 * degrees(asin(2 * -percent - 1)), fill='grey', outline='grey')
+                self.__canvas.create_polygon(tri_coord, fill='grey' if -percent >= 0.5 else 'white',
+                                             outline='grey' if -percent >= 0.5 else 'white',
+                                             width=1 if abs(percent) > 0.5 else 3)
+        self.__canvas.create_oval(arc_coord, outline='black' if is_good else 'red')
 
     def clear(self, x, y):
         arc_coord = x - GroundView.CELL_RADIUS, y - GroundView.CELL_RADIUS, x + GroundView.CELL_RADIUS, y + GroundView.CELL_RADIUS
-        self.canvas.create_oval(arc_coord, fill='white', outline='white')
+        self.__canvas.create_oval(arc_coord, fill='white', outline='white')
 
     def redraw(self):
         size = self.delegate.get_size()
         for x in range(size[0]):
             for y in range(size[1]):
+                x_, y_ = self.delegate.view_coord(x, y)
                 if self.delegate.get_cell_info_at(x, y) is None:
-                    self.clear(self.delegate.view_coord(x, y))
+                    self.clear(x_, y_)
                 else:
-                    self.draw_cell(self.delegate.view_coord(x, y), self.delegate.get_cell_info_at(x, y))
+                    good, percent = self.delegate.get_cell_info_at(x, y)
+                    self.draw_cell(x_, y_, good, percent)
+
+    def grid(self, raw, col):
+        self.__canvas.grid(column=col, row=raw)
 
 
 class GroundViewController(GroundViewDelegate):
     def on_timer(self):
-        self.model.round()
+        self.__model.round()
         self.view.redraw()
 
     def __init__(self, master_view):
-        self.model = Ground()
+        self.__model = Ground()
         self.view = GroundView(self, master_view)
         self.timer = Timer(5, self.on_timer)
 
     def get_size(self):
-        return self.model.MAX_ROW, self.model.MAX_COL
+        return self.__model.MAX_ROW, self.__model.MAX_COL
 
     def get_cell_info_at(self, x, y):
-        return self.model.get_cell_info_at(x, y)
+        return self.__model.get_cell_info_at(x, y)
 
-    def model_coord(self, x, y):
+    @staticmethod
+    def model_coord(x, y):
         return int((x - 5) // (GroundView.CELL_RADIUS * 1.2 * 2)), int((y - 5) // (GroundView.CELL_RADIUS * 1.2 * 2))
 
-    def view_coord(self, x, y):
+    @staticmethod
+    def view_coord(x, y):
         return x * GroundView.CELL_RADIUS * 1.2 * 2 + GroundView.CELL_RADIUS * 1.2 + 5, y * GroundView.CELL_RADIUS * 1.2 * 2 + GroundView.CELL_RADIUS * 1.2 + 5
+
+    def on_click(self, event):
+        mx, my = self.model_coord(event.x, event.y)
+        self.__model.add_cell(mx, my)
+        self.view.redraw()
