@@ -1,4 +1,7 @@
 # SuperCell
+（下面的中文和英文是同一个意思。）
+
+(The following Chinese and English is the same meaning.)
 
 这是一个基于 Martin Gardner于1970创建的“生命游戏”的游戏。
 
