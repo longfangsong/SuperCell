@@ -14,13 +14,12 @@ class UserControlView():
         self.toggle_speed = tkinter.Scale(self.view, orient=tkinter.HORIZONTAL, from_=0, to=100, resolution=1,
                                           label="卷动速度")
         self.toggle_speed.grid(column=0, columnspan=3, row=0)
-        slower_button = tkinter.Button(self.view, text="slower", command=self.slower)
+        slower_button = tkinter.Button(self.view, text="减速", command=self.slower)
         slower_button.grid(column=0, row=1)
-        pause_button = tkinter.Button(self.view, text="pause", command=self.pause)
+        pause_button = tkinter.Button(self.view, text="暂停", command=self.pause)
         pause_button.grid(column=1, row=1)
-        faster_button = tkinter.Button(self.view, text="faster", command=self.faster)
+        faster_button = tkinter.Button(self.view, text="加速", command=self.faster)
         faster_button.grid(column=2, row=1)
-
 
     def pause(self):
         self.toggle_speed.set(0)
