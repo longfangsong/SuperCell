@@ -129,9 +129,9 @@ class Cell:
         设置细胞的好坏
         :type val: bool
         """
-        assert self.bad != val
+        assert self.__bad != val
         if val:
-            self.bad = True
+            self.__bad = True
             self.__hp_max *= 2
             self.__hp *= 2
             self.__energy_max *= 2

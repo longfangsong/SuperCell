@@ -35,3 +35,6 @@ class UserControlView():
 
     def pack(self, col, row_):
         self.view.grid(column=col, row=row_)
+
+    def get_speed(self):
+        return self.toggle_speed.get()

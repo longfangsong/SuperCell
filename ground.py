@@ -1,8 +1,8 @@
-import cell
 import random
 import tkinter
-from threading import Timer
 from math import sqrt, degrees, asin
+
+import cell
 
 
 class Ground:
@@ -18,12 +18,11 @@ class Ground:
             self.__cells.append([])
             for j in range(0, Ground.MAX_COL):
                 self.__cells[i].append(None)
-        print(self.__cells)
 
-    def add_cell(self, x, y, new_cell=cell.Cell()):
+    def add_cell(self, x, y):
         assert 0 <= x < Ground.MAX_ROW and 0 <= y < Ground.MAX_COL
         assert self.__cells[x][y] is None
-        self.__cells[x][y] = new_cell
+        self.__cells[x][y] = cell.Cell()
 
     def __count_cells_around(self, x, y, count_what="all"):
         ret = 0
@@ -70,14 +69,14 @@ class Ground:
         if not self.__find_random_nearby_enemy_cell(x, y):
             return
         xx, yy = self.__find_random_nearby_enemy_cell(x, y)
-        self.__cells[xx][yy].harm(self.__cells[x][y].attack)
-        self.__cells[x][y].miuns_energy(self.__cells[x][y].attack)
+        self.__cells[xx][yy].hurt(self.__cells[x][y].attack)
+        self.__cells[x][y].minus_energy(self.__cells[x][y].attack)
 
     def __find_random_nearby_cell_to_breed(self, x, y):
         to_breed = []
         for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
             for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
-                if self.__cells[xx][yy] and self.__cells[xx][yy].bad == self.__cells[x][y].bad and \
+                if self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad == self.__cells[x][y].bad and \
                         self.__cells[xx][yy].can_breed:
                     to_breed.append((xx, yy))
         return random.sample(to_breed, 1)[0] if to_breed else None
@@ -91,6 +90,7 @@ class Ground:
         return random.sample(grid, 1)[0] if grid else None
 
     def __try_breed(self, x, y):
+        assert self.__cells[x][y] is not None
         if not self.__find_random_nearby_cell_to_breed(x, y) or not self.__find_random_nearby_empty_grid(x, y):
             return
         bx, by = self.__find_random_nearby_cell_to_breed(x, y)
@@ -100,7 +100,7 @@ class Ground:
 
     def __move(self, x, y):
         passed = set()
-        d = self.__cells[x][y].movable_distance()
+        d = self.__cells[x][y].movable_distance
         for step in range(0, d):
             if self.__find_random_nearby_empty_grid(x, y, passed):
                 xx, yy = self.__find_random_nearby_empty_grid(x, y, passed)
@@ -112,17 +112,24 @@ class Ground:
     def round(self):
         for x, row in enumerate(self.__cells):
             for y, the_cell in enumerate(row):
-                the_cell.round()
-                harm = 0
-                harm += self.__fight(x, y)
-                harm += self.__do_life_game_rule(x, y)
-                self.__move(x, y)
-                self.__try_breed(x, y)
+                if the_cell is not None:
+                    the_cell.round()
+                    self.__fight(x, y)
+                    self.__do_life_game_rule(x, y)
+                    if the_cell.really_dead:
+                        self.__cells[x][y] = None
+                        continue
+                    self.__try_breed(x, y)
+                    self.__move(x, y)
+
 
     def get_cell_info_at(self, x, y):
         if self.__cells[x][y] is None:
             return None
         return (not self.__cells[x][y].bad), self.__cells[x][y].hp_percent
+
+    def is_empty(self, x, y):
+        return self.__cells[x][y] is None
 
 
 class GroundViewDelegate:
@@ -167,7 +174,8 @@ class GroundView:
     def draw_cell(self, x, y, is_good, percent):
         arc_coord = x - GroundView.CELL_RADIUS, y - GroundView.CELL_RADIUS, x + GroundView.CELL_RADIUS, y + GroundView.CELL_RADIUS
         delta_h = 2 * GroundView.CELL_RADIUS * abs(percent) - GroundView.CELL_RADIUS
-        delta_x = sqrt(GroundView.CELL_RADIUS * GroundView.CELL_RADIUS - delta_h * delta_h)
+        delta_x = sqrt(abs(GroundView.CELL_RADIUS * GroundView.CELL_RADIUS - delta_h * delta_h))
+        self.__canvas.create_oval(arc_coord, fill='white')
         if percent >= 0.1:
             if percent >= 0.99:
                 self.__canvas.create_oval(arc_coord, fill='green', outline='black' if is_good else 'red')
@@ -199,7 +207,7 @@ class GroundView:
 
     def clear(self, x, y):
         arc_coord = x - GroundView.CELL_RADIUS, y - GroundView.CELL_RADIUS, x + GroundView.CELL_RADIUS, y + GroundView.CELL_RADIUS
-        self.__canvas.create_oval(arc_coord, fill='white', outline='white')
+        self.__canvas.create_oval(arc_coord, fill='white', outline='white', width=3)
 
     def redraw(self):
         size = self.delegate.get_size()
@@ -216,15 +224,24 @@ class GroundView:
         self.__canvas.grid(column=col, row=raw)
 
 
+class GameDelegate:
+    def can_add_cell(self):
+        pass
+
+    def cell_added(self):
+        pass
+
+
 class GroundViewController(GroundViewDelegate):
     def on_timer(self):
         self.__model.round()
         self.view.redraw()
 
-    def __init__(self, master_view):
+    def __init__(self, master_view, delegate_):
+        assert isinstance(delegate_, GameDelegate)
         self.__model = Ground()
         self.view = GroundView(self, master_view)
-        self.timer = Timer(5, self.on_timer)
+        self.delegate = delegate_
 
     def get_size(self):
         return self.__model.MAX_ROW, self.__model.MAX_COL
@@ -242,5 +259,7 @@ class GroundViewController(GroundViewDelegate):
 
     def on_click(self, event):
         mx, my = self.model_coord(event.x, event.y)
-        self.__model.add_cell(mx, my)
-        self.view.redraw()
+        if self.delegate.can_add_cell() and self.__model.is_empty(mx, my):
+            self.__model.add_cell(mx, my)
+            self.view.redraw()
+            self.delegate.cell_added()
