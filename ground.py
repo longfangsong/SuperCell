@@ -19,10 +19,10 @@ class Ground:
             for j in range(0, Ground.MAX_COL):
                 self.__cells[i].append(None)
 
-    def add_cell(self, x, y):
+    def add_cell(self, x, y, new_cell=cell.Cell()):
         assert 0 <= x < Ground.MAX_ROW and 0 <= y < Ground.MAX_COL
         assert self.__cells[x][y] is None
-        self.__cells[x][y] = cell.Cell()
+        self.__cells[x][y] = new_cell
 
     def __count_cells_around(self, x, y, count_what="all"):
         ret = 0
@@ -122,7 +122,6 @@ class Ground:
                     self.__try_breed(x, y)
                     self.__move(x, y)
 
-
     def get_cell_info_at(self, x, y):
         if self.__cells[x][y] is None:
             return None
@@ -130,6 +129,34 @@ class Ground:
 
     def is_empty(self, x, y):
         return self.__cells[x][y] is None
+
+    def count_cells(self, option):
+        count = 0
+        for l in self.__cells:
+            for c in l:
+                if c is None:
+                    continue
+                if "good" in option:
+                    if "alive" in option:
+                        if not c.bad and not c.nearly_dead:
+                            count += 1
+                    elif "dead" in option:
+                        if not c.bad and c.nearly_dead:
+                            count += 1
+                    else:
+                        if not c.bad:
+                            count += 1
+                elif "bad" in option:
+                    if "alive" in option:
+                        if c.bad and not c.nearly_dead:
+                            count += 1
+                    elif "dead" in option:
+                        if c.bad and c.nearly_dead:
+                            count += 1
+                    else:
+                        if c.bad:
+                            count += 1
+        return count
 
 
 class GroundViewDelegate:
@@ -263,3 +290,6 @@ class GroundViewController(GroundViewDelegate):
             self.__model.add_cell(mx, my)
             self.view.redraw()
             self.delegate.cell_added()
+
+    def count_cells(self, option):
+        return self.__model.count_cells(option)
