@@ -19,26 +19,30 @@ class Ground:
             for j in range(0, Ground.MAX_COL):
                 self.__cells[i].append(None)
 
-    def add_cell(self, x, y, new_cell=cell.Cell()):
+    def add_cell(self, x, y, new_cell=None):
+        if new_cell is None:
+            new_cell = cell.Cell()
         assert 0 <= x < Ground.MAX_ROW and 0 <= y < Ground.MAX_COL
         assert self.__cells[x][y] is None
         self.__cells[x][y] = new_cell
 
     def __count_cells_around(self, x, y, count_what="all"):
+        assert self.__cells[x][y] is not None
         ret = 0
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
-                if count_what == "all":
-                    if self.__cells[xx][yy]:
-                        ret += 1
-                elif count_what == "enemy":
-                    if self.__cells[xx][yy] and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
-                        ret += 1
-                elif count_what == "friend":
-                    if self.__cells[xx][yy] and self.__cells[xx][yy].bad == self.__cells[x][y].bad:
-                        ret += 1
-                else:
-                    raise ValueError
+        for xx in range(x - 1 if x - 1 >= 0 else 0, (x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1) + 1):
+            for yy in range(y - 1 if y - 1 >= 0 else 0, (y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1) + 1):
+                if self.__cells[xx][yy]:
+                    if count_what == "all":
+                        if self.__cells[xx][yy]:
+                            ret += 1
+                    elif count_what == "enemy":
+                        if self.__cells[xx][yy] and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
+                            ret += 1
+                    elif count_what == "friend":
+                        if self.__cells[xx][yy] and self.__cells[xx][yy].bad == self.__cells[x][y].bad:
+                            ret += 1
+                    else:
+                        raise ValueError
         return ret if count_what == "enemy" else ret - 1  # 数全部和我方时需要除去自己
 
     def __empty_grid_near(self, x, y):

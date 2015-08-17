@@ -15,7 +15,7 @@ class UserControlView():
         assert isinstance(delegate_, UserControlDelegate)
         self.view = tkinter.Frame(master_)
         self.delegate = delegate_
-        self.toggle_speed = tkinter.Scale(self.view, orient=tkinter.HORIZONTAL, from_=0, to=100, resolution=1,
+        self.toggle_speed = tkinter.Scale(self.view, orient=tkinter.HORIZONTAL, from_=0, to=10, resolution=1,
                                           label="卷动速度",
                                           command=lambda event: self.delegate.speed_changed(self.toggle_speed.get()))
         self.toggle_speed.grid(column=0, columnspan=3, row=1)
@@ -33,17 +33,14 @@ class UserControlView():
 
     def pause(self):
         self.toggle_speed.set(0)
-        self.delegate.speed_changed(0)
 
     def slower(self):
-        self.toggle_speed.set(self.toggle_speed.get() - 5)
-        self.delegate.speed_changed(self.toggle_speed.get())
+        self.toggle_speed.set(self.toggle_speed.get() - 1)
 
     def faster(self):
-        self.toggle_speed.set(self.toggle_speed.get() + 5)
-        self.delegate.speed_changed(self.toggle_speed.get())
+        self.toggle_speed.set(self.toggle_speed.get() + 1)
 
-    def pack(self, col, row_):
+    def grid(self, col, row_):
         self.view.grid(column=col, row=row_)
 
     def get_speed(self):
