@@ -286,7 +286,7 @@ class Cell:
     def round(self):
         # 增加能量，能量已满则加血
         if self.__energy == self.__energy_max:
-            if self.__hp == self.__hp_max and random.randint(0, 1) == 0:
+            if self.__hp < self.__hp_max and random.randint(0, 1) == 0:
                 self.__hp += 1
         else:
             self.__energy += 1

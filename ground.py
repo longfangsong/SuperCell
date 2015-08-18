@@ -63,8 +63,8 @@ class Ground:
 
     def __find_random_nearby_enemy_cell(self, x, y):
         enemies = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
+        for xx in range(x - 1 if x - 1 >= 0 else 0, (x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1) + 1):
+            for yy in range(y - 1 if y - 1 >= 0 else 0, (y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1) + 1):
                 if self.__cells[xx][yy] and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
                     enemies.append((xx, yy))
         return random.sample(enemies, 1)[0] if enemies else None
@@ -78,18 +78,18 @@ class Ground:
 
     def __find_random_nearby_cell_to_breed(self, x, y):
         to_breed = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
+        for xx in range(x - 1 if x - 1 >= 0 else 0, (x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1) + 1):
+            for yy in range(y - 1 if y - 1 >= 0 else 0, (y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1) + 1):
                 if self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad == self.__cells[x][y].bad and \
                         self.__cells[xx][yy].can_breed:
                     to_breed.append((xx, yy))
-        return random.sample(to_breed, 1)[0] if to_breed else None
+        return random.sample(to_breed, 1)[0] if len(to_breed) != 0 else None
 
     def __find_random_nearby_empty_grid(self, x, y, passed=None):
         grid = []
         for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
             for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
-                if self.__cells[xx][yy] is None and (xx, yy) not in passed:
+                if self.__cells[xx][yy] is None and (True if passed is None else (xx, yy) not in passed):
                     grid.append((xx, yy))
         return random.sample(grid, 1)[0] if grid else None
 
@@ -123,7 +123,7 @@ class Ground:
                     if the_cell.really_dead:
                         self.__cells[x][y] = None
                         continue
-                    self.__try_breed(x, y)
+                    # self.__try_breed(x, y)
                     self.__move(x, y)
 
     def get_cell_info_at(self, x, y):
