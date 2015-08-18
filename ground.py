@@ -63,8 +63,8 @@ class Ground:
 
     def __find_random_nearby_enemy_cell(self, x, y):
         enemies = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
+        for xx in range(x - 1 if x - 1 >= 0 else 0, (x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1) + 1):
+            for yy in range(y - 1 if y - 1 >= 0 else 0, (y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1) + 1):
                 if self.__cells[xx][yy] and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
                     enemies.append((xx, yy))
         return random.sample(enemies, 1)[0] if enemies else None
@@ -78,9 +78,10 @@ class Ground:
 
     def __find_random_nearby_cell_to_breed(self, x, y):
         to_breed = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
-                if self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad == self.__cells[x][y].bad and \
+        for xx in range(x - 1 if x - 1 >= 0 else 0, (x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1) + 1):
+            for yy in range(y - 1 if y - 1 >= 0 else 0, (y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1) + 1):
+                if (xx, yy) != (x, y) \
+                        and self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad == self.__cells[x][y].bad and \
                         self.__cells[xx][yy].can_breed:
                     to_breed.append((xx, yy))
         return random.sample(to_breed, 1)[0] if to_breed else None
@@ -89,16 +90,17 @@ class Ground:
         grid = []
         for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
             for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
-                if self.__cells[xx][yy] is None and (xx, yy) not in passed:
+                if self.__cells[xx][yy] is None and (True if passed is None else (xx, yy) not in passed):
                     grid.append((xx, yy))
         return random.sample(grid, 1)[0] if grid else None
 
     def __try_breed(self, x, y):
-        assert self.__cells[x][y] is not None
-        if not self.__find_random_nearby_cell_to_breed(x, y) or not self.__find_random_nearby_empty_grid(x, y):
+        b = self.__find_random_nearby_cell_to_breed(x, y)
+        t = self.__find_random_nearby_empty_grid(x, y)
+        if b is None or t is None:
             return
-        bx, by = self.__find_random_nearby_cell_to_breed(x, y)
-        tx, ty = self.__find_random_nearby_empty_grid(x, y)
+        bx, by = b
+        tx, ty = t
         assert self.__cells[bx][by].bad == self.__cells[x][y].bad and self.__cells[tx][ty] is None
         self.__cells[tx][ty] = cell.Cell(self.__cells[x][y], self.__cells[bx][by])
 
@@ -123,7 +125,8 @@ class Ground:
                     if the_cell.really_dead:
                         self.__cells[x][y] = None
                         continue
-                    self.__try_breed(x, y)
+                    if self.__cells[x][y].can_breed:
+                        self.__try_breed(x, y)
                     self.__move(x, y)
 
     def get_cell_info_at(self, x, y):
@@ -265,6 +268,7 @@ class GameDelegate:
 
 class GroundViewController(GroundViewDelegate):
     def on_timer(self):
+        print("Called")
         self.__model.round()
         self.view.redraw()
 

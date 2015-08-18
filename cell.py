@@ -27,7 +27,6 @@ class Cell:
         if father and mother:
             # 各项个体值随机来自某个亲本
             assert father.__bad == mother.__bad
-            assert father.__energy_max == father.__energy and mother.__energy_max == mother.__energy
             self.__hp_variation_rate = (father if random.randint(0, 1) == 0 else mother).__hp_variation_rate
             self.__energy_variation_rate = (father if random.randint(0, 1) == 0 else mother).__energy_variation_rate
             self.__attack_variation_rate = (father if random.randint(0, 1) == 0 else mother).__attack_variation_rate
@@ -140,7 +139,7 @@ class Cell:
             self.__defence //= 3
             self.__variation_rate *= 0.1
         else:
-            self.bad = False
+            self.__bad = False
             if random.randint(0, 100) != 0:
                 self.__hp_max //= 2
                 self.__hp //= 2
@@ -286,7 +285,7 @@ class Cell:
     def round(self):
         # 增加能量，能量已满则加血
         if self.__energy == self.__energy_max:
-            if self.__hp == self.__hp_max and random.randint(0, 1) == 0:
+            if self.__hp < self.__hp_max and random.randint(0, 1) == 0:
                 self.__hp += 1
         else:
             self.__energy += 1
