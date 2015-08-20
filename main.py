@@ -28,7 +28,6 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
             self.timer = None
         else:
             self.timer = Timer(2 / speed_val, self.on_timer)
-            # print("timer started by", 2 / speed_val, "seconds")
             self.timer.start()
         self.lock.release()
 

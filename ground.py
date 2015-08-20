@@ -101,7 +101,6 @@ class Ground:
             return
         bx, by = b
         tx, ty = t
-        assert self.__cells[bx][by].bad == self.__cells[x][y].bad and self.__cells[tx][ty] is None
         self.__cells[tx][ty] = cell.Cell(self.__cells[x][y], self.__cells[bx][by])
 
     def __move(self, x, y):
