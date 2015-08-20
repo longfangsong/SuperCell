@@ -90,7 +90,7 @@ class Ground:
         grid = []
         for xx in range(x - 1 if x - 1 >= 0 else 0, x + 1 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW - 1):
             for yy in range(y - 1 if y - 1 >= 0 else 0, y + 1 if y + 1 < Ground.MAX_COL else Ground.MAX_COL - 1):
-                if self.__cells[xx][yy] is None and (True if passed is None else (xx, yy) not in passed):
+                if self.__cells[xx][yy] is None and (xx, yy) not in passed:
                     grid.append((xx, yy))
         return random.sample(grid, 1)[0] if grid else None
 
@@ -268,7 +268,6 @@ class GameDelegate:
 
 class GroundViewController(GroundViewDelegate):
     def on_timer(self):
-        print("Called")
         self.__model.round()
         self.view.redraw()
 
