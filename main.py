@@ -26,7 +26,7 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
         if speed_val == 0:
             self.timer = None
         else:
-            self.timer = Timer(5 / speed_val, self.on_timer)
+            self.timer = Timer(3 / speed_val, self.on_timer)
             self.timer.start()
 
     def can_add_cell(self):
