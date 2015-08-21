@@ -21,7 +21,6 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
         self.view.mainloop()
 
     def speed_changed(self, speed_val):
-        self.lock.acquire()
         if self.timer is not None:
             self.timer.cancel()
         if speed_val == 0:
@@ -29,7 +28,6 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
         else:
             self.timer = Timer(2 / speed_val, self.on_timer)
             self.timer.start()
-        self.lock.release()
 
     def can_add_cell(self):
         return self.timer is None and self.money >= 10
@@ -42,8 +40,8 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
         self.lock.acquire()
         self.__money += self.ground.count_cells(("good", "alive"))
         self.ground.on_timer()
-        self.speed_changed(self.user_control_interface.get_speed())
         self.user_control_interface.redraw()
+        self.speed_changed(self.user_control_interface.get_speed())
         self.lock.release()
 
     @property

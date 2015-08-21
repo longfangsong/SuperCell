@@ -19,7 +19,7 @@ class Cell:
         self.__defence = 3
         self.__defence_variation_rate = 0.1
         self.__variation_rate = 0.01
-        self.__breed_will = 1 / 20
+        self.__breed_will = 1 / 10
         self.__experience = 0
         self.__level = 1
         self.__bad = False
@@ -229,10 +229,14 @@ class Cell:
 
     @property
     def attack(self):
-        return self.attack
+        return self.__attack
 
     @property
     def __need_variation(self):
+        """
+        返回一个细胞是否需要变异
+        ATTENTION:一回合只能调用一次
+        """
         return random.random() <= self.__variation_rate
 
     @property
@@ -311,5 +315,8 @@ class Cell:
 
     @property
     def can_breed(self):
+        """
+        ATTENTION:每回合只可调用一次
+        """
         return random.randint(0, int(
             1 / self.__breed_will)) == 0 and self.__harm_of_round == 0 and self.usable_energy == self.__energy_max
