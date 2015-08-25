@@ -198,7 +198,7 @@ class GroundView:
         grid_size = GroundView.CELL_RADIUS * 1.2 * 2
         self.__canvas = tkinter.Canvas(master_, width=(grid_size + 1) * 15 + 11,
                                        height=(grid_size + 1) * 15 + 11, bg='white')
-        self.__canvas.bind('<Button-1>', delegate.on_click)
+        self.__canvas.bind('<Button-1>', self.delegate.on_click)
         for x in range(size[0] + 1):
             self.__canvas.create_line(5, x * grid_size + 5,
                                       15 * grid_size + 5, x * grid_size + 5)
@@ -206,6 +206,11 @@ class GroundView:
             self.__canvas.create_line(y * grid_size + 5, 5,
                                       y * grid_size + 5, 15 * grid_size + 5)
         self.__canvas.grid(row=1, column=1)
+        self.buffer = []
+        for i in range(0, Ground.MAX_COL):
+            self.buffer.append([])
+            for j in range(0, Ground.MAX_ROW):
+                self.buffer[i].append(None)
 
     def __draw_cell(self, x, y, is_good, percent):  # horrible graphic code,don't touch it unless you are very sure
         arc_coord = x - GroundView.CELL_RADIUS, y - GroundView.CELL_RADIUS, \
@@ -251,12 +256,17 @@ class GroundView:
         size = self.delegate.get_size()
         for x in range(size[0]):
             for y in range(size[1]):
+                info = self.delegate.get_cell_info_at(x, y)
+                if info == self.buffer[x][y]:
+                    continue
+                self.buffer[x][y] = info
                 x_, y_ = self.delegate.view_coord(x, y)
-                if self.delegate.get_cell_info_at(x, y) is None:
+                if info is None:
                     self.__clear(x_, y_)
                 else:
-                    good, percent = self.delegate.get_cell_info_at(x, y)
+                    good, percent = info
                     self.__draw_cell(x_, y_, good, percent)
+
 
     def grid(self, raw, col):
         self.__canvas.grid(column=col, row=raw)
