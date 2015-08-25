@@ -19,7 +19,7 @@ class Cell:
         self.__defence = 3
         self.__defence_variation_rate = 0.1
         self.__variation_rate = 0.01
-        self.__breed_will = 1 / 10
+        self.__breed_will = 1 / 20
         self.__experience = 0
         self.__level = 1
         self.__bad = False
