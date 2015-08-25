@@ -1,5 +1,4 @@
 from threading import Timer
-from threading import RLock
 
 from ground import GroundViewController, GameDelegate
 from user_control import *
@@ -17,7 +16,6 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
         self.view.bind('<KeyPress- >', lambda _: self.user_control_interface.pause())
         self.user_control_interface.grid(1, 0)
         self.timer = None
-        self.lock = RLock()
         self.view.mainloop()
 
     def speed_changed(self, speed_val):
@@ -26,7 +24,7 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
         if speed_val == 0:
             self.timer = None
         else:
-            self.timer = Timer(3 / speed_val, self.on_timer)
+            self.timer = Timer(5 / speed_val, self.on_timer)
             self.timer.start()
 
     def can_add_cell(self):
@@ -37,12 +35,10 @@ class SuperCellViewController(UserControlDelegate, GameDelegate):
         self.user_control_interface.redraw()
 
     def on_timer(self):
-        self.lock.acquire()
         self.__money += self.ground.count_cells(("good", "alive"))
         self.ground.on_timer()
         self.user_control_interface.redraw()
         self.speed_changed(self.user_control_interface.get_speed())
-        self.lock.release()
 
     @property
     def money(self):

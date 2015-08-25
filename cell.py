@@ -61,7 +61,7 @@ class Cell:
             if element == 0:
                 self.__hp_variation_rate *= 1.05
             elif element == 1:
-                self.__hp_variation_rate *= 1.05
+                self.__energy_variation_rate *= 1.05
             elif element == 2:
                 self.__defence_variation_rate *= 1.05
             elif element == 3:
@@ -75,7 +75,7 @@ class Cell:
             if element == 0:
                 self.__hp_variation_rate *= 0.95
             elif element == 1:
-                self.__hp_variation_rate *= 0.95
+                self.__energy_variation_rate *= 0.95
             elif element == 2:
                 self.__defence_variation_rate *= 0.95
             elif element == 3:
