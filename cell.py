@@ -203,6 +203,11 @@ class Cell:
         self.__harm_of_round += val
 
     def add_hp(self, val):
+        """
+        为细胞加血
+        :param val: 加血的量
+        note: 若val+hp>hp_max，则简单地使hp=hp_max
+        """
         self.__hp += val
         self.__variation_rate -= val / 1000
         if self.__variation_rate <= 0.001:
@@ -223,6 +228,11 @@ class Cell:
         self.__energy -= val
 
     def add_energy(self, val):
+        """
+        为细胞加能量
+        :param val: 加能量的量
+        note: 若val+energy>energy_max，则简单地使energy=energy_max
+        """
         self.__energy += val
         if self.__energy > self.__energy_max:
             self.__energy = self.__energy_max

@@ -20,37 +20,66 @@ class Ground:
                 self.__cells[i].append(None)
 
     def add_cell(self, x, y, new_cell=None):
+        """
+        添加新细胞
+        :param x: 添加的位置的x坐标
+        :param y: 添加的位置的y坐标
+        :param new_cell: 要添加的细胞，若为None（默认值）则会自动生成一个新细胞
+        """
         assert 0 <= x < Ground.MAX_ROW and 0 <= y < Ground.MAX_COL
         assert self.__cells[x][y] is None
         if new_cell is None:
             new_cell = cell.Cell()
         self.__cells[x][y] = new_cell
 
-    def __count_cells_around(self, x, y, count_what="all"):
-        assert self.__cells[x][y] is not None
-        ret = 0
+    @staticmethod
+    def __grids_near(x, y):
+        """
+        生成器，枚举某一个细胞附近所有的坐标
+        :param x: 细胞的x坐标
+        :param y: 细胞的y坐标
+        :return: 生成器生成附近每一个细胞的坐标
+        """
         for xx in range(x - 1 if x - 1 >= 0 else 0, x + 2 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW):
             for yy in range(y - 1 if y - 1 >= 0 else 0, y + 2 if y + 1 < Ground.MAX_COL else Ground.MAX_COL):
-                if self.__cells[xx][yy]:
-                    if count_what == "all":
-                        if self.__cells[xx][yy]:
-                            ret += 1
-                    elif count_what == "enemy":
-                        if self.__cells[xx][yy] and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
-                            ret += 1
-                    elif count_what == "friend":
-                        if self.__cells[xx][yy] and self.__cells[xx][yy].bad == self.__cells[x][y].bad:
-                            ret += 1
-                    else:
-                        raise ValueError
-        return ret if count_what == "enemy" else ret - 1  # 数全部和我方时需要除去自己
+                if xx == x and yy == y:
+                    continue
+                else:
+                    yield (xx, yy)
+
+    def __count_cells_around(self, x, y, count_what="all"):
+        """
+        数某一个细胞附近符合条件的细胞
+        :param x: 细胞的x坐标
+        :param y: 细胞的y坐标
+        :param count_what: 数的条件:
+            all: 所有细胞
+            enemy: 敌方细胞
+            friend: 我方细胞
+        :return: 符号条件的细胞个数
+        """
+        assert self.__cells[x][y] is not None
+        ret = 0
+        for xx, yy in Ground.__grids_near(x, y):
+            if self.__cells[xx][yy]:
+                if count_what == "all":
+                    if self.__cells[xx][yy]:
+                        ret += 1
+                elif count_what == "enemy":
+                    if self.__cells[xx][yy] and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
+                        ret += 1
+                elif count_what == "friend":
+                    if self.__cells[xx][yy] and self.__cells[xx][yy].bad == self.__cells[x][y].bad:
+                        ret += 1
+                else:
+                    raise ValueError
+        return ret
 
     def __empty_grid_near(self, x, y):
         ret = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 2 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 2 if y + 1 < Ground.MAX_COL else Ground.MAX_COL):
-                if self.__cells[xx][yy] is None:
-                    ret.append((xx, yy))
+        for xx, yy in Ground.__grids_near(x, y):
+            if self.__cells[xx][yy] is None:
+                ret.append((xx, yy))
         return ret
 
     def __do_life_game_rule(self, x, y):
@@ -63,10 +92,9 @@ class Ground:
 
     def __find_random_nearby_enemy_cell(self, x, y):
         enemies = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 2 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 2 if y + 1 < Ground.MAX_COL else Ground.MAX_COL):
-                if self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
-                    enemies.append((xx, yy))
+        for xx, yy in Ground.__grids_near(x, y):
+            if self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad != self.__cells[x][y].bad:
+                enemies.append((xx, yy))
         return random.sample(enemies, 1)[0] if enemies else None
 
     def __fight(self, x, y):
@@ -79,20 +107,17 @@ class Ground:
 
     def __find_random_nearby_cell_to_breed(self, x, y):
         to_breed = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 2 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 2 if y + 1 < Ground.MAX_COL else Ground.MAX_COL):
-                if (xx, yy) != (x, y) \
-                        and self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad == self.__cells[x][y].bad and \
-                        self.__cells[xx][yy].can_breed:
-                    to_breed.append((xx, yy))
+        for xx, yy in Ground.__grids_near(x, y):
+            if self.__cells[xx][yy] is not None and self.__cells[xx][yy].bad == self.__cells[x][y].bad and \
+                    self.__cells[xx][yy].can_breed:
+                to_breed.append((xx, yy))
         return random.sample(to_breed, 1)[0] if to_breed else None
 
     def __find_random_nearby_empty_grid(self, x, y, passed):
         grid = []
-        for xx in range(x - 1 if x - 1 >= 0 else 0, x + 2 if x + 1 < Ground.MAX_ROW else Ground.MAX_ROW):
-            for yy in range(y - 1 if y - 1 >= 0 else 0, y + 2 if y + 1 < Ground.MAX_COL else Ground.MAX_COL):
-                if self.__cells[xx][yy] is None and (xx, yy) not in passed:
-                    grid.append((xx, yy))
+        for xx, yy in Ground.__grids_near(x, y):
+            if self.__cells[xx][yy] is None and (xx, yy) not in passed:
+                grid.append((xx, yy))
         return random.sample(grid, 1)[0] if grid else None
 
     def __try_breed(self, x, y):
@@ -102,8 +127,8 @@ class Ground:
             return
         else:
             bx, by = breed_with
-        tx, ty = birth_to
-        self.__cells[tx][ty] = cell.Cell(self.__cells[x][y], self.__cells[bx][by])
+            tx, ty = birth_to
+            self.__cells[tx][ty] = cell.Cell(self.__cells[x][y], self.__cells[bx][by])
 
     def __move(self, x, y):
         passed = set()
@@ -117,6 +142,8 @@ class Ground:
                 passed.add((xx, yy))
                 x, y = xx, yy
                 self.__cells[x][y].minus_energy(1)
+            else:
+                break
 
     def round(self):
         for x, row in enumerate(self.__cells):
@@ -192,8 +219,13 @@ class GroundView:
     CELL_RADIUS = 20
 
     def __init__(self, delegate, master_):
+        assert hasattr(delegate, 'get_size')
+        assert hasattr(delegate, 'get_cell_info_at')
+        assert hasattr(delegate, 'model_coord')
+        assert hasattr(delegate, 'view_coord')
+        assert hasattr(delegate, 'on_click')
+
         self.delegate = delegate
-        assert isinstance(self.delegate, GroundViewDelegate)
         size = self.delegate.get_size()
         grid_size = GroundView.CELL_RADIUS * 1.2 * 2
         self.__canvas = tkinter.Canvas(master_, width=(grid_size + 1) * 15 + 11,
@@ -271,17 +303,10 @@ class GroundView:
         self.__canvas.grid(column=col, row=raw)
 
 
-class GameDelegate:
-    def can_add_cell(self):
-        pass
-
-    def cell_added(self):
-        pass
-
-
-class GroundViewController(GroundViewDelegate):
+class GroundViewController():
     def __init__(self, master_view, delegate_):
-        assert isinstance(delegate_, GameDelegate)
+        assert hasattr(delegate_, 'can_add_cell')
+        assert hasattr(delegate_, 'cell_added')
         self.__model = Ground()
         self.view = GroundView(self, master_view)
         self.delegate = delegate_

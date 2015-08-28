@@ -1,10 +1,10 @@
 from threading import Timer
 
-from ground import GroundViewController, GameDelegate
+from ground import GroundViewController
 from user_control import *
 
 
-class SuperCellViewController(UserControlDelegate, GameDelegate):
+class SuperCellViewController(UserControlDelegate):
     def __init__(self):
         self.__money = 100
         self.view = tkinter.Tk()
