@@ -1,18 +1,10 @@
 import tkinter
 
 
-class UserControlDelegate:
-    def speed_changed(self, speed_val):
-        pass
-
-    @property
-    def money(self):
-        return 0
-
-
-class UserControlView():
+class UserControlView:
     def __init__(self, delegate_, master_=None):
-        assert isinstance(delegate_, UserControlDelegate)
+        assert hasattr(delegate_, 'speed_changed')
+        assert hasattr(delegate_, 'money')
         self.view = tkinter.Frame(master_)
         self.delegate = delegate_
         self.toggle_speed = tkinter.Scale(self.view, orient=tkinter.HORIZONTAL, from_=0, to=10, resolution=1,

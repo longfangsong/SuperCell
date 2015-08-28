@@ -303,7 +303,7 @@ class GroundView:
         self.__canvas.grid(column=col, row=raw)
 
 
-class GroundViewController():
+class GroundViewController:
     def __init__(self, master_view, delegate_):
         assert hasattr(delegate_, 'can_add_cell')
         assert hasattr(delegate_, 'cell_added')

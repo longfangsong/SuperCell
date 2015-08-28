@@ -4,7 +4,7 @@ from ground import GroundViewController
 from user_control import *
 
 
-class SuperCellViewController(UserControlDelegate):
+class SuperCellViewController:
     def __init__(self):
         self.__money = 100
         self.view = tkinter.Tk()
