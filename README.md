@@ -22,14 +22,14 @@ The rules of the origin game is changed a lot,for example,we add properties such
 
 The cells may become bad and attack other cells.Of course the good cells will strike back.
 
-如果有好的细胞生存在场上，玩家在每个细胞身上能得到游戏中的$1。这个钱可以用来购买新的细胞和道具。
+如果有好的细胞生存在场上，玩家在每个细胞身上能得到游戏中的$0.5。这个钱可以用来购买新的细胞和道具。
 
 If any good cell is alive at the ground,the player would be given $1 per cell in game.The money can be used to buy new cells and buy props.
 
 
-游戏目前还在开发中,现在我们有了一个alpha版本（只有源码）。如你所见，它是用Python编写的。我们会很高兴如果你愿意帮助我们完成它。
+游戏目前还在开发中,现在我们有了一个beta版本（在OS X上有简陋的installer和launcher，其他平台只有源码）。如你所见，它是用Python编写的。我们会很高兴如果你愿意帮助我们完成它。
 
-The game is still in developing,now we have a alpha edition(source code only).It is written in Python,as you see.If you'd like to help us on it,we'll be very glad.
+The game is still in developing,now we have a beta edition(on OS X we've got a simple and ugly installer and launcher,on other platforms source code only).It is written in Python,as you see.If you'd like to help us on it,we'll be very glad.
 
 
 我只是一个高中生，我的编程是自学的，所以我的代码（和我的英文）可能不那么漂亮，我对此感到非常抱歉。
