@@ -320,6 +320,8 @@ class Cell:
         """
         if self.nearly_dead:
             return 0
+        elif self.bad:
+            return self.usable_energy
         else:
             return self.usable_energy if self.usable_energy < self.__harm_of_round else self.__harm_of_round
 

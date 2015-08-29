@@ -1,4 +1,6 @@
 from threading import Timer
+from math import ceil
+import pickle
 
 from ground import GroundViewController
 from user_control import *
@@ -16,6 +18,7 @@ class SuperCellViewController:
         self.view.bind('<KeyPress- >', lambda _: self.user_control_interface.pause())
         self.user_control_interface.grid(1, 0)
         self.timer = None
+        self.load()
         self.view.mainloop()
 
     def speed_changed(self, speed_val):
@@ -23,6 +26,7 @@ class SuperCellViewController:
             self.timer.cancel()
         if speed_val == 0:
             self.timer = None
+            self.dump()
         else:
             self.timer = Timer(5 / speed_val, self.on_timer)
             self.timer.start()
@@ -35,7 +39,7 @@ class SuperCellViewController:
         self.user_control_interface.redraw()
 
     def on_timer(self):
-        self.__money += self.ground.count_cells(("good", "alive"))
+        self.__money += ceil(self.ground.count_cells(("good", "alive")) / 2)
         self.ground.on_timer()
         self.user_control_interface.redraw()
         self.speed_changed(self.user_control_interface.get_speed())
@@ -43,6 +47,28 @@ class SuperCellViewController:
     @property
     def money(self):
         return self.__money
+
+    def can_move_cell(self, distance):
+        return self.__money >= distance
+
+    def cell_moved(self, distance):
+        self.__money -= distance
+        self.user_control_interface.redraw()
+
+    def dump(self):
+        with open('save.sav', 'wb') as file:
+            pickle.dump(self.__money, file)
+            self.ground.dump(file)
+
+    def load(self):
+        try:
+            with open('save.sav', 'rb') as file:
+                self.__money = pickle.load(file)
+                self.ground.load(file)
+                self.ground.view.redraw()
+                self.user_control_interface.redraw()
+        except FileNotFoundError:
+            pass
 
 
 c = SuperCellViewController()

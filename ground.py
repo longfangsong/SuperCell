@@ -1,5 +1,6 @@
 import random
 import tkinter
+import pickle
 from math import sqrt, degrees, asin
 
 import cell
@@ -151,7 +152,8 @@ class Ground:
                 if the_cell is not None:
                     the_cell.round()
                     self.__fight(x, y)
-                    self.__do_life_game_rule(x, y)
+                    if not the_cell.bad:
+                        self.__do_life_game_rule(x, y)
                     if the_cell.really_dead:
                         self.__cells[x][y] = None
                         continue
@@ -195,24 +197,11 @@ class Ground:
                             count += 1
         return count
 
-
-class GroundViewDelegate:
-    def get_size(self):
-        pass
-
-    def get_cell_info_at(self, x, y):
-        pass
-
-    @staticmethod
-    def model_coord(x, y):
-        pass
-
-    @staticmethod
-    def view_coord(x, y):
-        pass
-
-    def on_click(self, event):
-        pass
+    def move_cell(self, x0, y0, x, y):
+        if self.__cells[x0][y0] is not None and self.__cells[x][y] is None and not self.__cells[x0][y0].bad:
+            self.__cells[x0][y0], self.__cells[x][y] = None, self.__cells[x0][y0]
+            return True
+        return False
 
 
 class GroundView:
@@ -224,13 +213,14 @@ class GroundView:
         assert hasattr(delegate, 'model_coord')
         assert hasattr(delegate, 'view_coord')
         assert hasattr(delegate, 'on_click')
-
+        assert hasattr(delegate, 'on_drag_release')
         self.delegate = delegate
         size = self.delegate.get_size()
         grid_size = GroundView.CELL_RADIUS * 1.2 * 2
         self.__canvas = tkinter.Canvas(master_, width=(grid_size + 1) * 15 + 11,
                                        height=(grid_size + 1) * 15 + 11, bg='white')
         self.__canvas.bind('<Button-1>', self.delegate.on_click)
+        self.__canvas.bind('<ButtonRelease-1>', self.delegate.on_drag_release)
         for x in range(size[0] + 1):
             self.__canvas.create_line(5, x * grid_size + 5,
                                       15 * grid_size + 5, x * grid_size + 5)
@@ -307,9 +297,11 @@ class GroundViewController:
     def __init__(self, master_view, delegate_):
         assert hasattr(delegate_, 'can_add_cell')
         assert hasattr(delegate_, 'cell_added')
+        assert hasattr(delegate_, 'can_move_cell')
         self.__model = Ground()
         self.view = GroundView(self, master_view)
         self.delegate = delegate_
+        self.__drag_begin_pos = (-1, -1)
 
     def on_timer(self):
         self.__model.round()
@@ -329,12 +321,32 @@ class GroundViewController:
     def view_coord(x, y):
         return x * GroundView.CELL_RADIUS * 1.2 * 2 + GroundView.CELL_RADIUS * 1.2 + 5, y * GroundView.CELL_RADIUS * 1.2 * 2 + GroundView.CELL_RADIUS * 1.2 + 5
 
+    def on_drag_release(self, event):
+        mx, my = GroundViewController.model_coord(event.x, event.y)
+        if self.model_coord(self.__drag_begin_pos[0], self.__drag_begin_pos[1]) == self.model_coord(event.x, event.y):
+            self.__drag_begin_pos = (-1, -1)
+        elif self.delegate.can_move_cell(abs(self.__drag_begin_pos[0] - mx) + abs(self.__drag_begin_pos[1] - my)):
+            if self.__model.move_cell(self.__drag_begin_pos[0], self.__drag_begin_pos[1],
+                                      GroundViewController.model_coord(event.x, event.y)[0],
+                                      GroundViewController.model_coord(event.x, event.y)[1]):
+                self.delegate.cell_moved(abs(self.__drag_begin_pos[0] - mx) + abs(self.__drag_begin_pos[1] - my))
+                self.__drag_begin_pos = (-1, -1)
+                self.view.redraw()
+
     def on_click(self, event):
         mx, my = self.model_coord(event.x, event.y)
         if self.delegate.can_add_cell() and self.__model.is_empty(mx, my):
             self.__model.add_cell(mx, my)
             self.view.redraw()
             self.delegate.cell_added()
+        elif not self.__model.is_empty(mx, my):
+            self.__drag_begin_pos = mx, my
 
     def count_cells(self, option):
         return self.__model.count_cells(option)
+
+    def dump(self, file):
+        pickle.dump(self.__model, file, 2)
+
+    def load(self, file):
+        self.__model = pickle.load(file)
